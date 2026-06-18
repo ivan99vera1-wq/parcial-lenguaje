@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cuestionario — Atención y Funciones Ejecutivas</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #232636;
+    --border: #2e3249;
+    --accent: #6c63ff;
+    --accent2: #a78bfa;
+    --correct: #22c55e;
+    --correct-bg: rgba(34,197,94,0.12);
+    --wrong: #ef4444;
+    --wrong-bg: rgba(239,68,68,0.12);
+    --text: #e2e8f0;
+    --muted: #8892a4;
+    --muted2: #5a6478;
+    --gold: #f59e0b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--accent2);
+  }
+
+  .header-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .toggle {
+    width: 36px; height: 20px;
+    background: var(--border);
+    border-radius: 999px;
+    position: relative;
+    transition: background .2s;
+    flex-shrink: 0;
+  }
+  .toggle::after {
+    content:'';
+    position:absolute;
+    width:14px; height:14px;
+    border-radius:50%;
+    background:#fff;
+    top:3px; left:3px;
+    transition: transform .2s;
+  }
+  .toggle.on { background: var(--accent); }
+  .toggle.on::after { transform: translateX(16px); }
+
+  /* ── Stats bar ── */
+  .stats-bar {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 24px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 12px;
+  }
+
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .stat-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+  .dot-correct { background: var(--correct); }
+  .dot-wrong   { background: var(--wrong); }
+  .dot-pending { background: var(--muted2); }
+
+  .stat-label { color: var(--muted); }
+  .stat-val   { font-weight: 700; color: var(--text); }
+
+  .pct-badge {
+    margin-left: auto;
+    background: var(--accent);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+    letter-spacing: .04em;
+  }
+
+  /* ── Progress bar ── */
+  .progress-wrap {
+    padding: 0 24px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+  }
+  .progress-label {
+    font-size: 11px;
+    color: var(--muted);
+    padding-top: 8px;
+    margin-bottom: 6px;
+  }
+  .progress-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 999px;
+    transition: width .35s ease;
+  }
+
+  /* ── Main layout ── */
+  main {
+    max-width: 740px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+  }
+
+  /* ── Question card ── */
+  .q-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+
+  .q-number {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  .q-text {
+    font-size: 15.5px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.6;
+    margin-bottom: 22px;
+  }
+
+  /* ── Options ── */
+  .options { display: flex; flex-direction: column; gap: 10px; }
+
+  .option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 13px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    background: transparent;
+    text-align: left;
+    color: var(--text);
+    font-size: 14.5px;
+    line-height: 1.55;
+    width: 100%;
+  }
+  .option:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: rgba(108,99,255,0.07);
+  }
+  .option:disabled { cursor: default; }
+
+  .option-letter {
+    flex-shrink: 0;
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    transition: background .15s, border-color .15s, color .15s;
+    margin-top: 1px;
+  }
+
+  .option.selected .option-letter {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .option.correct-reveal {
+    border-color: var(--correct);
+    background: var(--correct-bg);
+  }
+  .option.correct-reveal .option-letter {
+    background: var(--correct);
+    border-color: var(--correct);
+    color: #fff;
+  }
+
+  .option.wrong-reveal {
+    border-color: var(--wrong);
+    background: var(--wrong-bg);
+  }
+  .option.wrong-reveal .option-letter {
+    background: var(--wrong);
+    border-color: var(--wrong);
+    color: #fff;
+  }
+
+  /* ── Feedback ── */
+  .feedback {
+    display: none;
+    margin-top: 18px;
+    padding: 16px 18px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  .feedback.show { display: block; }
+  .feedback.correct { background: var(--correct-bg); border: 1px solid rgba(34,197,94,.3); }
+  .feedback.wrong   { background: var(--wrong-bg);   border: 1px solid rgba(239,68,68,.3); }
+
+  .feedback-verdict {
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+  .feedback.correct .feedback-verdict { color: var(--correct); }
+  .feedback.wrong   .feedback-verdict { color: var(--wrong);   }
+
+  .feedback-why {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .feedback-why-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+  .feedback-why p { color: var(--text); }
+
+  .feedback-ref {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  /* ── Buttons ── */
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s, transform .1s;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn:disabled { opacity: .4; cursor: default; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) { opacity: .88; }
+
+  .btn-ghost {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover:not(:disabled) { border-color: var(--accent2); }
+
+  .btn-gold {
+    background: var(--gold);
+    color: #000;
+  }
+  .btn-gold:hover:not(:disabled) { opacity: .88; }
+
+  .btn-danger {
+    background: var(--wrong);
+    color: #fff;
+  }
+  .btn-danger:hover:not(:disabled) { opacity: .85; }
+
+  /* ── End screen ── */
+  #end-screen {
+    display: none;
+    text-align: center;
+    padding: 48px 20px 80px;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  .end-icon { font-size: 56px; margin-bottom: 16px; }
+  .end-title {
+    font-size: 26px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .end-sub { color: var(--muted); font-size: 15px; margin-bottom: 28px; }
+  .end-stats {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+  .es-item { text-align: center; }
+  .es-val {
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .es-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; }
+  .es-val.green { color: var(--correct); }
+  .es-val.red   { color: var(--wrong); }
+  .es-val.gold  { color: var(--gold); }
+
+  .end-actions { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+
+  /* ── Review mode banner ── */
+  .review-banner {
+    display: none;
+    background: rgba(245,158,11,.1);
+    border: 1px solid rgba(245,158,11,.3);
+    border-radius: 10px;
+    padding: 11px 16px;
+    font-size: 13px;
+    color: var(--gold);
+    margin-bottom: 18px;
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+  .review-banner.show { display: flex; }
+
+  /* ── Responsive ── */
+  @media (max-width: 520px) {
+    header { padding: 12px 16px; }
+    main { padding: 20px 12px 60px; }
+    .q-card { padding: 20px 16px; }
+    .end-stats { grid-template-columns: 1fr; }
+    .es-val { font-size: 26px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-title">Atención &amp; F. Ejecutivas</div>
+  <div class="header-controls">
+    <label class="toggle-wrap" id="shuffle-label">
+      <div class="toggle" id="shuffle-toggle"></div>
+      <span>Modo aleatorio</span>
+    </label>
+  </div>
+</header>
+
+<!-- STATS BAR -->
+<div class="stats-bar" id="stats-bar">
+  <div class="stat"><div class="stat-dot dot-correct"></div><span class="stat-label">Correctas:</span><span class="stat-val" id="s-correct">0</span></div>
+  <div class="stat"><div class="stat-dot dot-wrong"></div><span class="stat-label">Incorrectas:</span><span class="stat-val" id="s-wrong">0</span></div>
+  <div class="stat"><div class="stat-dot dot-pending"></div><span class="stat-label">Pendientes:</span><span class="stat-val" id="s-pending">34</span></div>
+  <div class="pct-badge" id="s-pct">0%</div>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-wrap" id="progress-wrap">
+  <div class="progress-label" id="prog-label">Pregunta 1 de 34</div>
+  <div class="progress-track"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+</div>
+
+<!-- MAIN QUIZ -->
+<main id="quiz-main">
+  <div class="review-banner" id="review-banner">⚠️ Modo repaso — solo preguntas incorrectas</div>
+
+  <div class="q-card">
+    <div class="q-number" id="q-number">Pregunta 1</div>
+    <div class="q-text"  id="q-text"></div>
+    <div class="options"  id="q-options"></div>
+    <div class="feedback" id="q-feedback">
+      <div class="feedback-verdict" id="fb-verdict"></div>
+      <div id="fb-correct-text"></div>
+      <div class="feedback-why" id="fb-why">
+        <div class="feedback-why-label">Justificación</div>
+        <p id="fb-why-text"></p>
+      </div>
+      <div class="feedback-ref" id="fb-ref"></div>
+    </div>
+  </div>
+
+  <div class="actions" id="actions">
+    <button class="btn btn-ghost" id="btn-prev">← Anterior</button>
+    <button class="btn btn-primary" id="btn-check">Comprobar respuesta</button>
+    <button class="btn btn-ghost" id="btn-next" style="display:none">Siguiente →</button>
+  </div>
+</main>
+
+<!-- END SCREEN -->
+<div id="end-screen">
+  <div class="end-icon" id="end-icon">🧠</div>
+  <div class="end-title" id="end-title">¡Cuestionario completado!</div>
+  <div class="end-sub"  id="end-sub"></div>
+  <div class="end-stats">
+    <div class="es-item"><div class="es-val green" id="e-correct">0</div><div class="es-lbl">Correctas</div></div>
+    <div class="es-item"><div class="es-val red"   id="e-wrong">0</div><div class="es-lbl">Incorrectas</div></div>
+    <div class="es-item"><div class="es-val gold"  id="e-pct">0%</div><div class="es-lbl">Acierto</div></div>
+  </div>
+  <div class="end-actions">
+    <button class="btn btn-gold"   id="btn-review-errors" style="display:none">Repasar errores</button>
+    <button class="btn btn-primary" id="btn-restart">Volver a empezar</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════
+//  DATA — 34 preguntas extraídas del documento
+// ════════════════════════════════════════════════
+const QUESTIONS = [
+  {
+    id:1,
+    text:"En el modelo actualizado de Memoria Operativa de Baddeley, la lectura de las modalidades sensoriales, ¿con qué almacén se asocia la lectura de labios?",
+    options:["Bucle fonológico","Agenda visuoespacial","Búfer Episódico"],
+    correct:0,
+    why:"Los apuntes indican explícitamente que en el bucle fonológico se incluye \"la lectura de los labios que no es visuoespacial, sino que es un código y se manipula aquí\", junto con la música y el sonido.",
+    wrongWhy:"La agenda visuoespacial procesa información visual y espacial, no códigos fonológicos. El búfer episódico integra información multimodal a largo plazo.",
+    ref:"Tema 5 – Funciones Ejecutivas II"
+  },
+  {
+    id:2,
+    text:"Según el modelo de Posner y Petersen (1990), el síndrome de Balint se produciría por una afectación en la red...",
+    options:["Red de vigilancia o alerta","Red de orientación","Red ejecutiva"],
+    correct:1,
+    why:"El Tema 3 agrupa el Síndrome de Balint-Holmes bajo el epígrafe \"Alteraciones de la función de orientación\", junto con la Parálisis Supranuclear Progresiva y la Heminegligencia. El síndrome implica alteración de movimientos oculares, localización y simultagnosia, todas funciones de la red de orientación.",
+    wrongWhy:"La red de vigilancia regula el arousal y el estado de alerta general. La red ejecutiva gestiona el control inhibitorio, la planificación y la resolución de conflictos.",
+    ref:"Tema 3 – Trastornos de la Atención"
+  },
+  {
+    id:3,
+    text:"Para las personas con dificultades en Teoría de la Mente, al escuchar VERBOS RELACIONADOS CON estados mentales durante una tarea a realizar:",
+    options:["Dicha tarea se facilita","La tarea se dificulta","No afecta al rendimiento en la tarea"],
+    correct:1,
+    why:"El Tema 5 describe que la cognición social implica \"atribución de creencias, deseos o intenciones (Teoría de la Mente)\". En personas con dificultades en ToM, el procesamiento de verbos mentales interfiere con otras tareas al consumir más recursos cognitivos.",
+    wrongWhy:"No se facilita porque procesar estados mentales supone un coste cognitivo extra, especialmente cuando hay dificultades en ToM.",
+    ref:"Tema 5 – Funciones Ejecutivas II (Cognición Social)"
+  },
+  {
+    id:4,
+    text:"Entre los problemas conceptuales y metodológicos del estudio de las funciones ejecutivas, destacan:",
+    options:["La confusión entre procesos, demandas de tarea, y conductas ejecutivas","La ausencia de disociaciones funcionales claras","a y b son correctas"],
+    correct:2,
+    why:"El Tema 4 enumera explícitamente ambos problemas: (2) \"Falta de validez de la definición clásica de los subprocesos ejecutivos\" y (5) \"Falta de disociaciones funcionales claras\". Como ambas son correctas, la respuesta es c).",
+    wrongWhy:"Las opciones a) y b) son parcialmente correctas por separado, pero la opción c) las engloba a ambas, siendo la respuesta más completa.",
+    ref:"Tema 4 – Introducción al Estudio de las Funciones Ejecutivas (\"Crisis de los 90\")"
+  },
+  {
+    id:5,
+    text:"La corteza prefrontal dorsolateral (AB46 y 9/46):",
+    options:["Participa de la monitorización","Participa en la inhibición","Participa en la memoria operativa"],
+    correct:2,
+    why:"El Tema 4 indica que \"en la toma de decisiones sobre lo que atender o no atender, el córtex prefrontal dorsolateral muestra un efecto directo en la capacidad para mantener el nivel de rendimiento adecuado\" (mantenimiento de tarea y memoria operativa). El Tema 5 sitúa las áreas dorsolaterales en el subtipo disejecutivo.",
+    wrongWhy:"La monitorización se asocia al córtex cingulado anterior (ERN). La inhibición se vincula a la corteza orbitofrontal y al giro frontal inferior.",
+    ref:"Tema 4 – Marcadores Fisiológicos de las FE / Tema 5 – Funciones Ejecutivas II"
+  },
+  {
+    id:6,
+    text:"Damasio (1997) señala que la aparición de un marcador somático:",
+    options:["Impide el razonamiento frío","No es incompatible con el razonamiento frío","Obliga al razonamiento frío"],
+    correct:1,
+    why:"El Tema 5 señala que \"el razonamiento frío total es imposible\" pero que los marcadores somáticos complementan la toma de decisiones. No los impiden ni los obligan; son señales emocionales que actúan en paralelo.",
+    wrongWhy:"No impide el razonamiento frío porque ambos procesos coexisten. No lo obliga porque el marcador somático es una señal, no una imposición.",
+    ref:"Tema 5 – Funciones Ejecutivas II (Toma de Decisiones – Modelo de Damasio)"
+  },
+  {
+    id:7,
+    text:"¿Cuál es la localización más probable de una lesión en alguien que padece un síndrome prefrontal subtipo desinhibido?",
+    options:["Áreas dorsolaterales","Áreas orbitofrontales","Áreas mediales prefrontales"],
+    correct:1,
+    why:"El Tema 5 establece: \"Las orbitales que generan el subtipo desinhibido: los pacientes que tiene alterada esta área no respetan normas sociales, son impulsivos, no ven las consecuencias de sus conductas, son egocéntricos\".",
+    wrongWhy:"Las áreas dorsolaterales generan el subtipo disejecutivo. Las áreas mediales/ventromediales generan el subtipo apático.",
+    ref:"Tema 5 – Funciones Ejecutivas II (Síndromes Prefrontales)"
+  },
+  {
+    id:8,
+    text:"¿En qué mecanismo atencional está implicado el Sistema Activador Reticular Ascendente (SARA)?",
+    options:["Atención selectiva","Vigilancia o arousal cortical","Atención de expectativa"],
+    correct:1,
+    why:"El Tema 2 define: \"Vigilancia tónica: supone la activación cerebral o Arousal. Prerrequisito para una adecuada función atencional. Sistema Activador Reticular Ascendente (SARA)\".",
+    wrongWhy:"La atención selectiva implica selección y filtro de información relevante. La atención de expectativa (vigilancia fásica) se da por señales que anticipan estímulos concretos.",
+    ref:"Tema 2 – Mecanismos Cerebrales Asociados a la Atención Endógena (Vigilancia Tónica)"
+  },
+  {
+    id:9,
+    text:"El modelo de control ejecutivo de Norman y Shallice (1986):",
+    options:["Es un modelo que trata de explicar el control intencional de la atención","Es un modelo que trata de explicar el control intencional de la acción","A y B son correctas"],
+    correct:1,
+    why:"El Tema 4 precisa: \"lejos de tratar el procesamiento perceptivo, aplica a la parte motora (al output)\" y que el modelo \"trata de explicar el control de la conducta intencional y automático\", centrado en esquemas de acción y control motor.",
+    wrongWhy:"No trata el control intencional de la atención sino de la acción motora, por lo que c) tampoco es correcta.",
+    ref:"Tema 4 – Modelos Teóricos de las Funciones Ejecutivas (SAS de Norman y Shallice)"
+  },
+  {
+    id:10,
+    text:"Entre los marcadores neurofisiológicos de las funciones ejecutivas, el componente P3a se ha asociado con:",
+    options:["Planificación","Mantenimiento","Cambio de tarea (Shifting)"],
+    correct:2,
+    why:"El Tema 4 establece: \"la respuesta P3a frontal que se relaciona con el cambio de regla\". El P3a tiene localización fronto-central y origen frontal, asociado a detección de novedad y orientación atencional que precede al cambio de tarea.",
+    wrongWhy:"La planificación no tiene un ERP específico descrito con P3a. El mantenimiento se estudia con modulación del componente P1 y activación prefrontal dorsolateral.",
+    ref:"Tema 4 – Marcadores Fisiológicos de las FE (Cambio y Reconfiguración de Tarea)"
+  },
+  {
+    id:11,
+    text:"Entre los marcadores neurofisiológicos de las funciones ejecutivas, la ERN se ha asociado con:",
+    options:["Monitorización y corrección de errores","Inhibición","Secuenciación"],
+    correct:0,
+    why:"El Tema 4 indica: \"el componente ERN que se relaciona con el procesamiento de los errores\" y \"se ha relacionado con el cíngulo\". En TOC la ERN está sobreactivada por exceso de monitorización; en esquizofrenia hay reducción del ERN por déficit de supervisión.",
+    wrongWhy:"La inhibición se estudia con N2 y P3 en tareas Go-NoGo. La secuenciación no aparece vinculada a la ERN en los apuntes.",
+    ref:"Tema 4 – Marcadores Fisiológicos de las FE (Monitorización)"
+  },
+  {
+    id:12,
+    text:"De acuerdo con el modelo clínico de Funciones Ejecutivas (Mateer, 1999), un paciente que va al supermercado y, al no encontrar un producto no busca un sustituto, muestra dificultades en el componente de:",
+    options:["Inhibición de respuesta","Conciencia","Generación"],
+    correct:2,
+    why:"El Tema 5 describe el componente de \"Pensamiento generativo\" como la \"generación de alternativas para solucionar problemas\" y señala entre sus alteraciones: \"Conducta rígida\". No buscar sustituto equivale a incapacidad de generar alternativas.",
+    wrongWhy:"La inhibición de respuesta implica parar conductas automáticas. La conciencia (awareness) implica supervisar y detectar los propios errores, no generar soluciones alternativas.",
+    ref:"Tema 5 – Funciones Ejecutivas II (Modelo Clínico de Mateer – Pensamiento Generativo)"
+  },
+  {
+    id:13,
+    text:"En el modelo jerárquico de Stuss y Benson (1986) sobre las funciones ejecutivas:",
+    options:["La conciencia no está definida como una parte del modelo","Las funciones ejecutivas implican mecanismos conscientes","La conciencia es un proceso independiente, aunque relacionado, con las funciones ejecutivas"],
+    correct:2,
+    why:"El Tema 4 muestra que la \"Autoconciencia\" está en la cima de la jerarquía, por encima del \"Control ejecutivo\", siendo un nivel independiente que lo regula. La conciencia no forma parte de las FE propiamente dichas, sino que las supervisa desde un nivel superior.",
+    wrongWhy:"La conciencia SÍ está definida en el modelo (descarta a). No es que las FE impliquen conciencia, sino que la conciencia las regula desde un nivel jerárquico superior (descarta b).",
+    ref:"Tema 4 – Modelos Teóricos de las FE (Modelo de Control Jerárquico de Stuss y Benson)"
+  },
+  {
+    id:14,
+    text:"Los resultados de la influencia de la emoción sobre los procesos de inhibición en los pacientes con TEAF parecen sugerir:",
+    options:[
+      "Dificultades específicas a la hora de regular su conducta en contextos positivos, reflejadas mediante una menor amplitud del componente P3a ante eventos positivos.",
+      "Dificultades específicas a la hora de regular su conducta en contextos negativos, reflejadas mediante una menor amplitud del componente P3a ante eventos negativos.",
+      "Dificultades específicas a la hora de regular su conducta de forma generalizada, reflejadas mediante una mayor amplitud del componente P2."
+    ],
+    correct:2,
+    why:"El Tema 3 indica: \"los pacientes tienen menos recursos en los Nogo positivos que en los otros, debido a que este tipo de emoción les captura mucho más la atención\" y que la captura atencional en TEAF se refleja en una mayor amplitud del componente P2.",
+    wrongWhy:"Las opciones a) y b) mencionan \"menor amplitud del P3a\" lo cual no aparece en los apuntes para TEAF. El componente relevante descrito es el P2 (mayor amplitud = mayor captura atencional).",
+    ref:"Tema 3 – Trastornos de la Atención (TEAF)"
+  },
+  {
+    id:15,
+    text:"¿Cuál de los potenciales corticales lentos (atención endógena pre-estímulo) se ha asociado más directamente con la expectativa de estímulos informativos (feedback o instrucciones)?",
+    options:["Desincronización asociada a eventos (ERD)","Negatividad Precedente al Estímulo (SPN)","Potencial de Preparación (RP)"],
+    correct:1,
+    why:"El Tema 2 define la SPN como el componente que \"precede a estímulos informativos (instrucciones, feedback tras la emisión de una respuesta): a mayor expectativa, mayor amplitud\". Se registra en áreas prefrontales y parietales derechas.",
+    wrongWhy:"El RP (Potencial de Preparación) se asocia a preparación motora voluntaria, no a expectativa informativa. La ERD es una desincronización de banda alfa, no un componente ERP específico de expectativa.",
+    ref:"Tema 2 – Mecanismos Cerebrales de Atención Endógena (SPN, van Boxtel & Böcker, 2004)"
+  },
+  {
+    id:16,
+    text:"De las siguientes afirmaciones, señala la que se corresponde con una característica del componente \"Variación Negativa Contingente\":",
+    options:[
+      "El subcomponente temprano se asocia a preparación motora y el subcomponente tardío está más relacionado con el procesamiento cognitivo más elaborado.",
+      "Cuando el estímulo de aviso (paradigma E1-E2) es de modalidad auditiva, la VNC se registra en áreas temporales.",
+      "Su amplitud es sensible al contenido emocional del estímulo de aviso en el paradigma E1-E2."
+    ],
+    correct:2,
+    why:"El Tema 2 afirma que los potenciales de expectativa \"Son muy sensibles a la información también de tipo emocional pues no es lo mismo estar esperando si una flecha indica a la izquierda o a la derecha o si va a aparecer la foto de una hoja o de una araña\".",
+    wrongWhy:"La opción a) invierte los subcomponentes: el temprano se asocia a anticipación cognitiva y el tardío a preparación motora. La opción b) no aparece en los apuntes.",
+    ref:"Tema 2 – Mecanismos Cerebrales de Atención Endógena (VNC/CNV, Walter et al., 1964)"
+  },
+  {
+    id:17,
+    text:"Los trabajos de neuroimagen actuales sobre las funciones de las regiones de la corteza prefrontal señalan que la monitorización del conflicto depende de estructuras como el... (SEÑALA LA RESPUESTA CORRECTA):",
+    options:["Córtex Cingulado Anterior (AB24, 32, 33)","Córtex prefrontal dorsolateral (AB46, 9/46)","Córtex frontal inferior (AB47/12, 45)"],
+    correct:0,
+    why:"El Tema 4 establece: \"Los estudios de neuroimagen sitúan los generadores neurales asociados a los fenómenos de interferencia (Incongruente > Congruente) en el córtex cingulado anterior\". Además, la ERN relacionada con monitorización de errores \"se ha relacionado con el cíngulo\".",
+    wrongWhy:"El córtex prefrontal dorsolateral se asocia al mantenimiento de tarea y memoria operativa. El córtex frontal inferior se vincula a inhibición y cambio de tarea.",
+    ref:"Tema 4 – Marcadores Fisiológicos de las FE (Conflicto e Interferencia)"
+  },
+  {
+    id:18,
+    text:"Los estudios en pacientes con heminegligencia muestran que (SEÑALA LA RESPUESTA CORRECTA):",
+    options:[
+      "Los pacientes con heminegligencia parecen tener problemas de atención exógena a la hora de desenganchar la atención de la señal en el hemicampo contralateral, siempre que la señal sea informativa.",
+      "Los pacientes con heminegligencia parecen tener problemas de atención endógena a la hora de desenganchar la atención de la señal en el hemicampo ipsilesional, siempre que la señal sea contrapredictiva.",
+      "Los pacientes con heminegligencia parecen tener problemas de atención exógena a la hora de desenganchar la atención de la señal en el hemicampo ipsilesional, siempre que la señal sea informativa."
+    ],
+    correct:2,
+    why:"El Tema 3 concluye: \"Problemas de atención exógena para desenganchar la atención de la señal en el hemicampo ipsilesional cuando la señal no es informativa. Cuando la señal es contrapredictiva no hay problemas en desenganchar la atención.\"",
+    wrongWhy:"La opción a) dice hemicampo contralateral (error: es ipsilesional). La opción b) dice atención endógena y señal contrapredictiva, ambos datos opuestos a lo que muestran los apuntes.",
+    ref:"Tema 3 – Trastornos de la Atención (Síndrome de Heminegligencia)"
+  },
+  {
+    id:19,
+    text:"Se ha observado que la estimulación en movimiento genera una mayor atención que la estática. ¿Qué índices neuronales reflejan esto?",
+    options:["Menor amplitud de P1 ante lo negativo","Mayor activación de áreas del giro occipital","Los dos anteriores son correctas"],
+    correct:2,
+    why:"El Tema 1 indica: \"lo que se vio es que había mayor respuesta de los estímulos que se mueven\" reflejada en mayor respuesta del componente P1 y que \"lo dinámico genera más activación en cortezas visuales\". Respuesta marcada como correcta en el examen original.",
+    wrongWhy:"Tomadas por separado, ninguna opción recoge el cuadro completo; juntas reflejan tanto el índice ERP (P1) como la activación cortical visual.",
+    ref:"Tema 1 – Conceptos Básicos sobre la Atención (Datos ERP y Amplificación Sensorial)"
+  },
+  {
+    id:20,
+    text:"Según el modelo de Posner y Petersen (1990), la Parálisis Supranuclear Progresiva produciría una afectación en la red:",
+    options:["Red de orientación","Red de vigilancia o alerta","Red ejecutiva"],
+    correct:0,
+    why:"El Tema 3 agrupa la Parálisis Supranuclear Progresiva dentro de \"Alteraciones de la función de orientación\" junto con heminegligencia y Balint-Holmes. La lesión en los colículos superiores afecta directamente a los movimientos oculares de orientación.",
+    wrongWhy:"La red de vigilancia se alteraría en trastornos del arousal. La red ejecutiva en lesiones prefrontales con alteraciones de control inhibitorio y planificación.",
+    ref:"Tema 3 – Trastornos de la Atención (Alteraciones de la Función de Orientación)"
+  },
+  {
+    id:21,
+    text:"De acuerdo con el modelo clínico de Funciones Ejecutivas (Mateer, 1999), un paciente con una lesión medial prefrontal se caracteriza por dificultades en:",
+    options:["Inhibición de respuesta","Iniciativa y drive","Mantenimiento de la conducta"],
+    correct:1,
+    why:"El Tema 5 indica: \"Las ventromediales o mediales, que son las que generan el subtipo apático\" y el componente de \"Iniciativa o drive\" incluye: \"El daño medial frontal → Apatía → Dificultad para iniciar la conducta voluntariamente → Cíngulo anterior\".",
+    wrongWhy:"La inhibición de respuesta se vincula a la corteza orbitofrontal. El mantenimiento de la conducta está basado en memoria operativa y componentes de inhibición, no específicamente en lesión medial.",
+    ref:"Tema 5 – Funciones Ejecutivas II (Modelo Clínico de Mateer – Iniciativa/Drive)"
+  },
+  {
+    id:22,
+    text:"Elige la respuesta CORRECTA en relación con las fases de la memoria: atención, consolidación y mantenimiento/amplificación sensorial:",
+    options:[
+      "Las tres fases ocurren siguiendo una secuencia serial, produciendo más allá de los 500 ms atención, en consolidación y mantenimiento amplificándose con tres fases.",
+      "La amplificación disminuye más allá de los 100 ms y puede alcanzarse más allá de los 500 ms.",
+      "La ola P3b representa una herramienta útil para el mantenimiento/consolidación de la tarea oddball."
+    ],
+    correct:1,
+    why:"El Tema 1 concluye en la sección de Amplificación Sensorial: \"Puede comenzar desde los 100 ms y alargarse más allá de los 500 ms\". La amplificación no ocurre en secuencia serial rígida sino en paralelo con las otras fases.",
+    wrongWhy:"La opción a) es incorrecta porque los apuntes afirman que las fases NO son una secuencia serial. La opción c) no aparece respaldada en los apuntes.",
+    ref:"Tema 1 – Conceptos Básicos sobre la Atención (Conclusiones: Amplificación Sensorial)"
+  },
+  {
+    id:23,
+    text:"Al hablar de consciencia del déficit, ¿sobre qué aspectos es más difícil tener consciencia?",
+    options:["Sobre el rendimiento emocional","Sobre el rendimiento cognitivo","Sobre el rendimiento físico"],
+    correct:0,
+    why:"El Tema 5 establece una jerarquía explícita: \"El primer elemento sobre el que se suele tomar conciencia es sobre el rendimiento físico [más fácil]. La segunda cuestión son las actividades de la vida diaria. Un poco más difícil es sobre el rendimiento cognitivo. Lo más difícil de todo es el rendimiento emocional.\"",
+    wrongWhy:"El rendimiento físico es lo más fácil de percibir. El rendimiento cognitivo es más difícil que el físico pero menos que el emocional.",
+    ref:"Tema 5 – Funciones Ejecutivas II (Conciencia del Déficit – Modelo de Fleming)"
+  },
+  {
+    id:24,
+    text:"¿Cuál de las siguientes regiones cerebrales constituye un área vinculada con los procesos de preatención?",
+    options:["Vía dorsal de la visión","Corteza visual primaria","Tálamo visual"],
+    correct:2,
+    why:"El Tema 1 afirma: \"recientemente se ha incluido otras áreas como el tálamo visual\" en la red evaluativa/preatencional. \"La función de preatención se ha vinculado como componente muy temprano con la que conecta el tálamo visual con el componente P1\" (sucede a los 40 ms).",
+    wrongWhy:"La vía dorsal se asocia a procesamiento visoespacial, no a preatención. La corteza visual primaria recibe y procesa la información visual pero no es la región preatencional evaluativa descrita.",
+    ref:"Tema 1 – Conceptos Básicos sobre la Atención (Mecanismos Cerebrales de Atención Exógena – Preatención)"
+  },
+  {
+    id:25,
+    text:"Si tenemos en cuenta que el componente P300 es un índice electrofisiológico cerebral que puede reflejar la cantidad de recursos atencionales disponibles para realizar una tarea, ¿qué ocurriría al introducir distractores en el paradigma oddball?",
+    options:[
+      "La amplitud del P300 en respuesta al tono infrecuente aumentará siguiendo la dificultad al introducir distractores, ya que la tarea oddball (mayor dificultad) aumenta la atención.",
+      "A medida que va aumentando la dificultad de la tarea oddball, el P300 en respuesta al tono infrecuente presentará mayor amplitud al realizar una segunda tarea junto con la tarea oddball (tarea dual) en comparación con la atención de la tarea oddball de forma individual.",
+      "La amplitud del P300 en respuesta al tono infrecuente disminuirá de forma individual."
+    ],
+    correct:1,
+    why:"El Tema 2 establece: \"Siempre que se introduce un distractor en la tarea Oddball disminuye el P300 porque disminuye los recursos para procesar esa información. Lo que indica P300 es la cantidad de recursos que tenemos disponibles\". La opción B está marcada como correcta en el examen original (tarea dual).",
+    wrongWhy:"La opción a) es incorrecta porque mayor dificultad REDUCE el P300, no lo aumenta. La opción c) es la más consistente con los apuntes pero la opción b) es la marcada en el examen.",
+    ref:"Tema 2 – Mecanismos Cerebrales de Atención Endógena (P300 y Paradigma Oddball)"
+  },
+  {
+    id:26,
+    text:"¿En cuál de los siguientes ejemplos es más probable que se produzca una activación de la red dorsal de atención endógena?",
+    options:[
+      "Durante la búsqueda y detección del target en un paradigma \"singleton\"",
+      "Al detectar el target en una posición inesperada en un paradigma de localización espacial",
+      "Al detectar el target en un paradigma de búsqueda visual"
+    ],
+    correct:0,
+    why:"El Tema 2 señala: \"Durante la búsqueda y detección del target se activan áreas de la red dorsal fronto-parietal > CONTROL TOP-DOWN\". En el paradigma singleton, la búsqueda activa preferentemente la red dorsal endógena.",
+    wrongWhy:"Al detectar el target en posición inesperada (opción b) se activa la red ventral por el carácter novedoso/exógeno. La opción c) también involucra red dorsal pero la opción a) es la marcada como correcta.",
+    ref:"Tema 2 – Mecanismos Cerebrales de Atención Endógena (Atención Post-Estímulo – Búsqueda Visual)"
+  },
+  {
+    id:27,
+    text:"En el análisis de oscilaciones cerebrales, ¿cuáles se han asociado a los procesos de atención exógena? Elige la opción CORRECTA.",
+    options:["Oscilaciones cerebrales superiores a 30 Hz","Oscilaciones cerebrales entre 8-12 Hz","Ambas son correctas"],
+    correct:1,
+    why:"El Tema 1 establece literalmente: \"Oscilaciones cerebrales entre 8-12 Hz (ritmo alfa) asociadas con atención exógena\" y \"Oscilaciones cerebrales superiores a 30 Hz (ritmo gamma) asociadas a atención endógena\".",
+    wrongWhy:"Las oscilaciones >30 Hz (gamma) se asocian a atención ENDÓGENA, no exógena. Por tanto, la opción c) tampoco es correcta.",
+    ref:"Tema 1 – Conceptos Básicos sobre la Atención (Procesos Atencionales Exógenos: Curso Temporal)"
+  },
+  {
+    id:28,
+    text:"Menciona y selecciona el índice psicofisiológico periférico vinculado con la respuesta de atención general:",
+    options:["Mayor tasa cardiaca","Menor dilatación pupilar","Mayor dilatación pupilar"],
+    correct:2,
+    why:"El Tema 1 describe que la respuesta de orientación atencional genera \"bradicardia\" (menor tasa cardiaca, favorece el procesamiento) y \"dilatación pupilar\" (midriasis: profundidad de campo). La mayor dilatación pupilar refleja que el sistema está procesando el estímulo de interés.",
+    wrongWhy:"La mayor tasa cardiaca se asocia a respuesta de DEFENSA, no de orientación. La menor dilatación pupilar es lo contrario de lo que se describe en los apuntes.",
+    ref:"Tema 1 – Conceptos Básicos sobre la Atención (Captura Atencional – Respuestas Periféricas)"
+  },
+  {
+    id:29,
+    text:"¿Qué paradigma es idóneo para la exploración en neurociencia cognitiva de los procesos de atención emocional?",
+    options:[
+      "Paradigma de tarea directa: estímulos concurrentes pero discretos",
+      "Paradigma de Stroop con palabras que incluyen distinto significado emocional",
+      "Paradigma Oddball clásico: estímulos frecuentes (80%) y estímulos seleccionados (20%)"
+    ],
+    correct:0,
+    why:"El Tema 1 indica que \"las tareas más recomendables para evaluarlo son aquellas en las que aparecen dos estímulos distintos que aparecen en el mismo tiempo\" (estímulos concurrentes pero discretos). \"El Stroop emocional no es equivalente a la vida real porque todo se contiene en el mismo estímulo.\"",
+    wrongWhy:"El Stroop emocional es explícitamente descartado: \"no cumple la condición, pues no son dos estímulos distintos\". El Oddball clásico no presenta dos estímulos concurrentes discretos con contenido emocional.",
+    ref:"Tema 1 – Conceptos Básicos sobre la Atención (Procesos Atencionales Exógenos – Paradigmas)"
+  },
+  {
+    id:30,
+    text:"En relación con los sesgos de atención hacia la información emocional y su modulación a nivel neural, ¿cómo se produce esta modulación en los pacientes respecto a los individuos sanos?",
+    options:[
+      "Los componentes tempranos o exógenos (P1, N1, P3) aumentan su amplitud. Por el contrario, en los componentes tardíos o endógenos (P2 y N3), disminuyen en amplitud.",
+      "Los componentes tempranos tienen mayor amplitud y los componentes tardíos (N2 y P3) no se individualizan en comparación con los individuos sanos.",
+      "Los componentes tempranos tienen mayor amplitud y los componentes tardíos (N2 y P3) tienen una mayor amplitud que la información emocional en comparación con los individuos sanos."
+    ],
+    correct:1,
+    why:"El Tema 3 señala: \"en las fases tempranas la información emocional hace que les capture más la atención [mayor amplitud], pero en los componentes tardíos con el mecanismo de desenganche tienen menor amplitud\". Los pacientes capturan más pero tienen menos recursos para desengancharse.",
+    wrongWhy:"La opción a) nombra incorrectamente P3 como componente temprano. La opción c) dice que los tardíos tienen mayor amplitud, lo cual es lo contrario de lo descrito.",
+    ref:"Tema 3 – Trastornos de la Atención (Mecanismos Electrofisiológicos Atencionales – Sesgos)"
+  },
+  {
+    id:31,
+    text:"¿En qué momento el sistema cognitivo humano es capaz de discriminar entre los estímulos atendidos o no atendidos?",
+    options:[
+      "Alrededor de los 80-90 ms tras la presentación del estímulo (componente C1)",
+      "En los 100-120 ms tras la presentación del estímulo (componente P1)",
+      "No antes de los 300 ms tras la presentación del estímulo (componente P3)"
+    ],
+    correct:1,
+    why:"El Tema 1 establece que \"la función de preatención se ha vinculado como componente muy temprano con la que conecta el tálamo visual con el componente P1, que es capaz de diferenciar entre lo que es atendido y aquello que no lo es\". El Tema 4 muestra que las diferencias entre estímulo atendido e ignorado se observan en el componente P1 (80-100 ms).",
+    wrongWhy:"El C1 (80-90 ms) refleja activación en córtex estriada pero sin diferencias entre atendido/ignorado. El P3 (>300 ms) refleja procesamiento cognitivo más tardío y consciente.",
+    ref:"Tema 1 – Conceptos Básicos sobre la Atención / Tema 4 – Marcadores Fisiológicos"
+  },
+  {
+    id:32,
+    text:"En la Parálisis Supranuclear Progresiva, ¿dónde se localiza la lesión?",
+    options:["Colículos superiores","Colículos inferiores","Hipocampo"],
+    correct:0,
+    why:"El Tema 3 indica explícitamente: \"La lesión se da en los colículos superiores por la acumulación de las proteínas TAU. Los movimientos de orientación hacen que afecte a los movimientos oculares y que eso afecte a la orientación.\"",
+    wrongWhy:"Los colículos inferiores se asocian al procesamiento auditivo. El hipocampo se relaciona con la memoria, no con los movimientos oculares de orientación.",
+    ref:"Tema 3 – Trastornos de la Atención (Alteraciones de la Función de Orientación – Parálisis Supranuclear Progresiva)"
+  },
+  {
+    id:33,
+    text:"Para rehabilitar los sesgos de atención podemos utilizar los mismos paradigmas que usamos durante su exploración (por ejemplo, Dot-Probe). ¿Cuáles son las modificaciones necesarias?",
+    options:[
+      "Se suelen realizar ajustes en la contingencia donde se establece que un 50% de los ensayos sean congruentes y un 50% incongruentes, forzando a que la atención se dirija hacia la información sin valor emocional.",
+      "Se suelen realizar ajustes en la contingencia donde se establece que el 80% de los ensayos sean incongruentes, forzando de forma implícita a que la atención se dirija hacia la información sin valor emocional.",
+      "Se suelen realizar ajustes en la contingencia donde se establece que el 80% de los ensayos sean incongruentes, forzando de forma explícita a que la atención se dirija hacia la información sin valor emocional."
+    ],
+    correct:1,
+    why:"El Tema 3 describe: \"se le está enseñando al paciente que a medida que van pasando los estímulos dirija la atención más a la información neutral. Es un entrenamiento puramente conductual\" (implícito, no explícito). El diagrama muestra \"20/80% Contingencia\" en el grupo experimental (80% ensayos incongruentes).",
+    wrongWhy:"La opción a) usa 50/50, que corresponde al grupo CONTROL del estudio. La opción c) usa 80% incongruentes pero dice \"explícita\", cuando el aprendizaje es implícito.",
+    ref:"Tema 3 – Trastornos de la Atención (Intervención sobre los Sesgos de Atención)"
+  },
+  {
+    id:34,
+    text:"En relación con la rehabilitación de los sesgos de atención y su modulación a nivel neural en función de la etapa de procesamiento (ERPs), ¿cómo se produce esta modulación?",
+    options:[
+      "Después de la rehabilitación, los componentes tempranos o endógenos (P2 y N3) disminuyen su amplitud. Por el contrario, los componentes tardíos o endógenos (P1, N1, P2) aumentan en amplitud.",
+      "Después de la rehabilitación, los componentes tempranos o exógenos (P1, N1, P2) aumentan su amplitud. Por el contrario, los componentes tardíos o endógenos (N2 y P3) disminuyen en amplitud.",
+      "Después de la rehabilitación, tanto los componentes tempranos o exógenos como los componentes tardíos o endógenos aumentan su amplitud."
+    ],
+    correct:1,
+    why:"El Tema 3 indica los resultados post-entrenamiento: mayor amplitud de N2 en pacientes estimulados (distribución de recursos endógenos más eficiente). Los componentes tempranos reflejan menor captura atencional y los tardíos muestran mayor control endógeno.",
+    wrongWhy:"La opción a) invierte los nombres de los componentes. La opción c) indica que todos aumentan, pero los apuntes muestran que los tempranos disminuyen (menos captura atencional) como resultado positivo del entrenamiento.",
+    ref:"Tema 3 – Trastornos de la Atención (Intervención sobre los Sesgos – Resultados ERP)"
+  }
+];
+
+// ════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════
+let order        = QUESTIONS.map((_,i) => i); // indices into QUESTIONS
+let current      = 0;                          // index into `order`
+let userAnswers  = new Array(QUESTIONS.length).fill(null); // keyed by question index
+let answered     = new Array(QUESTIONS.length).fill(false);
+let shuffleOn    = false;
+let reviewMode   = false;
+let reviewQueue  = [];   // indices (into QUESTIONS) of wrong answers
+let reviewPos    = 0;
+
+// ════════════════════════════════════════════════
+//  REFS
+// ════════════════════════════════════════════════
+const $qNumber    = document.getElementById('q-number');
+const $qText      = document.getElementById('q-text');
+const $qOptions   = document.getElementById('q-options');
+const $feedback   = document.getElementById('q-feedback');
+const $fbVerdict  = document.getElementById('fb-verdict');
+const $fbCorrect  = document.getElementById('fb-correct-text');
+const $fbWhy      = document.getElementById('fb-why-text');
+const $fbRef      = document.getElementById('fb-ref');
+const $btnCheck   = document.getElementById('btn-check');
+const $btnNext    = document.getElementById('btn-next');
+const $btnPrev    = document.getElementById('btn-prev');
+const $progFill   = document.getElementById('prog-fill');
+const $progLabel  = document.getElementById('prog-label');
+const $sCorrect   = document.getElementById('s-correct');
+const $sWrong     = document.getElementById('s-wrong');
+const $sPending   = document.getElementById('s-pending');
+const $sPct       = document.getElementById('s-pct');
+const $quizMain   = document.getElementById('quiz-main');
+const $endScreen  = document.getElementById('end-screen');
+const $eCorrect   = document.getElementById('e-correct');
+const $eWrong     = document.getElementById('e-wrong');
+const $ePct       = document.getElementById('e-pct');
+const $endIcon    = document.getElementById('end-icon');
+const $endTitle   = document.getElementById('end-title');
+const $endSub     = document.getElementById('end-sub');
+const $btnReview  = document.getElementById('btn-review-errors');
+const $btnRestart = document.getElementById('btn-restart');
+const $shuffleTog = document.getElementById('shuffle-toggle');
+const $reviewBanner = document.getElementById('review-banner');
+const $statsBar   = document.getElementById('stats-bar');
+const $progressWrap = document.getElementById('progress-wrap');
+
+// ════════════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════════════
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function stats() {
+  let correct = 0, wrong = 0;
+  for (let i = 0; i < QUESTIONS.length; i++) {
+    if (!answered[i]) continue;
+    if (userAnswers[i] === QUESTIONS[i].correct) correct++;
+    else wrong++;
+  }
+  return { correct, wrong, pending: QUESTIONS.length - correct - wrong };
+}
+
+function updateStats() {
+  const s = stats();
+  $sCorrect.textContent = s.correct;
+  $sWrong.textContent   = s.wrong;
+  $sPending.textContent = s.pending;
+  const total = s.correct + s.wrong;
+  const pct = total ? Math.round(s.correct / total * 100) : 0;
+  $sPct.textContent = pct + '%';
+}
+
+// ════════════════════════════════════════════════
+//  RENDER QUESTION
+// ════════════════════════════════════════════════
+function getActiveIndex() {
+  if (reviewMode) return reviewQueue[reviewPos];
+  return order[current];
+}
+
+function getActiveTotal() {
+  if (reviewMode) return reviewQueue.length;
+  return order.length;
+}
+
+function getActivePos() {
+  if (reviewMode) return reviewPos;
+  return current;
+}
+
+function renderQuestion() {
+  const qi = getActiveIndex();
+  const q  = QUESTIONS[qi];
+  const pos = getActivePos();
+  const total = getActiveTotal();
+
+  $qNumber.textContent = `Pregunta ${q.id} de ${QUESTIONS.length}`;
+  $qText.textContent   = q.text;
+
+  // Progress
+  $progLabel.textContent = `Pregunta ${pos + 1} de ${total}` + (reviewMode ? ' (repaso)' : '');
+  $progFill.style.width  = ((pos + 1) / total * 100) + '%';
+
+  // Build options
+  $qOptions.innerHTML = '';
+  const letters = ['A','B','C','D','E'];
+  q.options.forEach((opt, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.innerHTML = `<span class="option-letter">${letters[idx]}</span><span>${opt}</span>`;
+    btn.addEventListener('click', () => selectOption(btn, idx));
+    $qOptions.appendChild(btn);
+  });
+
+  // Hide feedback
+  $feedback.className = 'feedback';
+  $btnCheck.style.display  = 'inline-block';
+  $btnNext.style.display   = 'none';
+  $btnCheck.disabled = true;
+
+  // Prev button
+  $btnPrev.disabled = (pos === 0);
+
+  // If already answered, restore state
+  if (answered[qi]) {
+    restoreAnswered(qi);
+  }
+}
+
+function selectOption(btn, idx) {
+  const qi = getActiveIndex();
+  if (answered[qi]) return;
+
+  // Clear selection
+  document.querySelectorAll('.option').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  userAnswers[qi] = idx;
+  $btnCheck.disabled = false;
+}
+
+function restoreAnswered(qi) {
+  const q = QUESTIONS[qi];
+  const chosen = userAnswers[qi];
+  const isCorrect = chosen === q.correct;
+  const letters = ['A','B','C','D','E'];
+  const optBtns = $qOptions.querySelectorAll('.option');
+
+  optBtns.forEach((b, idx) => {
+    b.disabled = true;
+    if (idx === q.correct) b.classList.add('correct-reveal');
+    else if (idx === chosen && !isCorrect) b.classList.add('wrong-reveal');
+  });
+
+  showFeedback(q, isCorrect, chosen);
+  $btnCheck.style.display = 'none';
+  $btnNext.style.display  = 'inline-block';
+}
+
+// ════════════════════════════════════════════════
+//  CHECK ANSWER
+// ════════════════════════════════════════════════
+$btnCheck.addEventListener('click', () => {
+  const qi = getActiveIndex();
+  const q  = QUESTIONS[qi];
+  const chosen = userAnswers[qi];
+  if (chosen === null) return;
+
+  answered[qi] = true;
+  const isCorrect = chosen === q.correct;
+  const letters = ['A','B','C','D','E'];
+
+  // Style options
+  const optBtns = $qOptions.querySelectorAll('.option');
+  optBtns.forEach((b, idx) => {
+    b.disabled = true;
+    if (idx === q.correct) b.classList.add('correct-reveal');
+    else if (idx === chosen && !isCorrect) b.classList.add('wrong-reveal');
+  });
+
+  showFeedback(q, isCorrect, chosen);
+
+  $btnCheck.style.display = 'none';
+  $btnNext.style.display  = 'inline-block';
+
+  updateStats();
+
+  // Check if it's the last unanswered
+  const allDone = answered.every(Boolean);
+  if (allDone && !reviewMode) {
+    $btnNext.textContent = 'Ver resultados →';
+  }
+});
+
+function showFeedback(q, isCorrect, chosen) {
+  const letters = ['A','B','C','D','E'];
+  $feedback.className = 'feedback show ' + (isCorrect ? 'correct' : 'wrong');
+  $fbVerdict.textContent = isCorrect ? '✅ ¡Correcto!' : '❌ Incorrecto';
+  $fbCorrect.textContent = isCorrect ? '' : `La respuesta correcta era: ${letters[q.correct]}) ${q.options[q.correct]}`;
+  $fbWhy.textContent = q.why;
+  $fbRef.textContent = '📚 ' + q.ref;
+}
+
+// ════════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════════
+$btnNext.addEventListener('click', () => {
+  if (reviewMode) {
+    reviewPos++;
+    if (reviewPos >= reviewQueue.length) {
+      showEnd();
+    } else {
+      renderQuestion();
+    }
+    return;
+  }
+
+  const allDone = answered.every(Boolean);
+  if (allDone && current === order.length - 1) {
+    showEnd();
+    return;
+  }
+
+  if (current < order.length - 1) {
+    current++;
+    renderQuestion();
+  } else {
+    showEnd();
+  }
+});
+
+$btnPrev.addEventListener('click', () => {
+  if (reviewMode) {
+    if (reviewPos > 0) { reviewPos--; renderQuestion(); }
+    return;
+  }
+  if (current > 0) { current--; renderQuestion(); }
+});
+
+// ════════════════════════════════════════════════
+//  END SCREEN
+// ════════════════════════════════════════════════
+function showEnd() {
+  const s = stats();
+  const total = s.correct + s.wrong;
+  const pct = total ? Math.round(s.correct / total * 100) : 0;
+
+  $eCorrect.textContent = s.correct;
+  $eWrong.textContent   = s.wrong;
+  $ePct.textContent     = pct + '%';
+
+  if (pct >= 80) {
+    $endIcon.textContent  = '🎉';
+    $endTitle.textContent = '¡Excelente resultado!';
+  } else if (pct >= 60) {
+    $endIcon.textContent  = '👍';
+    $endTitle.textContent = '¡Buen intento!';
+  } else {
+    $endIcon.textContent  = '📚';
+    $endTitle.textContent = 'Sigue practicando';
+  }
+  $endSub.textContent = `Has respondido ${total} de ${QUESTIONS.length} preguntas. Acierto: ${pct}%`;
+
+  // Wrong questions for review
+  const wrongIdx = QUESTIONS.map((_,i) => i).filter(i => answered[i] && userAnswers[i] !== QUESTIONS[i].correct);
+  if (wrongIdx.length > 0) {
+    $btnReview.style.display = 'inline-block';
+    $btnReview.textContent   = `Repasar ${wrongIdx.length} error${wrongIdx.length>1?'es':''}`;
+    $btnReview.onclick = () => startReview(wrongIdx);
+  } else {
+    $btnReview.style.display = 'none';
+  }
+
+  $quizMain.style.display = 'none';
+  $endScreen.style.display = 'block';
+  $statsBar.style.display  = 'none';
+  $progressWrap.style.display = 'none';
+}
+
+// ════════════════════════════════════════════════
+//  REVIEW MODE
+// ════════════════════════════════════════════════
+function startReview(wrongIdx) {
+  reviewMode   = true;
+  reviewQueue  = shuffleOn ? shuffle(wrongIdx) : wrongIdx;
+  reviewPos    = 0;
+
+  // Reset answered/answers for review items
+  wrongIdx.forEach(i => {
+    answered[i]    = false;
+    userAnswers[i] = null;
+  });
+
+  $endScreen.style.display    = 'none';
+  $quizMain.style.display     = 'block';
+  $statsBar.style.display     = 'flex';
+  $progressWrap.style.display = 'block';
+  $reviewBanner.classList.add('show');
+
+  renderQuestion();
+}
+
+// ════════════════════════════════════════════════
+//  RESTART
+// ════════════════════════════════════════════════
+$btnRestart.addEventListener('click', () => {
+  reviewMode   = false;
+  reviewQueue  = [];
+  reviewPos    = 0;
+  current      = 0;
+  userAnswers  = new Array(QUESTIONS.length).fill(null);
+  answered     = new Array(QUESTIONS.length).fill(false);
+  order        = shuffleOn ? shuffle(QUESTIONS.map((_,i)=>i)) : QUESTIONS.map((_,i)=>i);
+
+  $endScreen.style.display    = 'none';
+  $quizMain.style.display     = 'block';
+  $statsBar.style.display     = 'flex';
+  $progressWrap.style.display = 'block';
+  $reviewBanner.classList.remove('show');
+  $btnNext.textContent = 'Siguiente →';
+
+  updateStats();
+  renderQuestion();
+});
+
+// ════════════════════════════════════════════════
+//  SHUFFLE TOGGLE
+// ════════════════════════════════════════════════
+document.getElementById('shuffle-label').addEventListener('click', () => {
+  shuffleOn = !shuffleOn;
+  $shuffleTog.classList.toggle('on', shuffleOn);
+  order = shuffleOn ? shuffle(QUESTIONS.map((_,i)=>i)) : QUESTIONS.map((_,i)=>i);
+  current = 0;
+  userAnswers  = new Array(QUESTIONS.length).fill(null);
+  answered     = new Array(QUESTIONS.length).fill(false);
+  reviewMode   = false;
+  $reviewBanner.classList.remove('show');
+  $btnNext.textContent = 'Siguiente →';
+  updateStats();
+  renderQuestion();
+});
+
+// ════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════
+updateStats();
+renderQuestion();
+</script>
+</body>
+</html>
